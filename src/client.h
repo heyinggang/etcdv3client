@@ -63,7 +63,7 @@ class Client final : public KVInterface {
     const RangeOptions& options = RangeOptions()
   ) -> grpc::Status override;
 
-  // Put a key and a value
+  // Put
   auto Put(
     grpc::ClientContext* context,
     const std::string& key,
@@ -71,6 +71,14 @@ class Client final : public KVInterface {
     etcdserverpb::PutResponse* response,
     const PutOptions& options = PutOptions()
     ) -> grpc::Status override;
+
+  // Delete
+  auto DeleteRange(
+    grpc::ClientContext* context,
+    const std::string& key,
+    etcdserverpb::DeleteRangeResponse* response,
+    const DeleteRangeOptions& options = DeleteRangeOptions()
+  ) -> grpc::Status override;
 
  private:
 

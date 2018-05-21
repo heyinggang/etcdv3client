@@ -11,8 +11,10 @@
 #include "kv.h"
 #include "client.h"
 
+using namespace etcdv3client;
+
 // Get key and values
-auto etcdv3client::Client::Range(
+auto Client::Range(
   grpc::ClientContext* context,
   const std::string& key,
   etcdserverpb::RangeResponse* response,
@@ -27,8 +29,8 @@ auto etcdv3client::Client::Range(
     return kv_->Range(context, req, response);
   }
 
-// Put a key and a value
-auto etcdv3client::Client::Put(
+// Put
+auto Client::Put(
   grpc::ClientContext* context,
   const std::string& key,
   const std::string& value,
@@ -43,4 +45,19 @@ auto etcdv3client::Client::Put(
     options.Apply(req);
 
     return kv_->Put(context, req, response);
+  }
+
+auto Client::DeleteRange(
+  grpc::ClientContext* context,
+  const std::string& key,
+  etcdserverpb::DeleteRangeResponse* response,
+  const DeleteRangeOptions& options
+  ) -> grpc::Status {
+
+    etcdserverpb::DeleteRangeRequest req;
+    req.set_key(key);
+
+    options.Apply(req);
+
+    return kv_->DeleteRange(context, req, response);
   }
