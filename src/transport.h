@@ -15,77 +15,45 @@
 
 #include "grpcpp/grpcpp.h"
 
-#include "proto/rpc.grpc.pb.h"
-
 namespace etcdv3client {
 
-// Define the interface of a `Transport`
+// Define the interface of a `Transport`.
+// The transport is used to create the underlying grpc channel
 class TransportInterface {
  public:
+  TransportInterface() = default;
+
+  //
+  // TransportInterface is neither copyable nor movable.
+  //
+  TransportInterface(const TransportInterface&) = delete;
+  TransportInterface(TransportInterface&&) = delete;
+  auto operator=(const TransportInterface&) -> TransportInterface& = delete;
+
   virtual ~TransportInterface() = default;
 
-  auto virtual GetKVService() -> std::shared_ptr<etcdserverpb::KV::StubInterface> = 0;
-  auto virtual GetWatchService() -> std::shared_ptr<etcdserverpb::Watch::StubInterface> = 0;
-  auto virtual GetLeaseService() -> std::shared_ptr<etcdserverpb::Lease::StubInterface> = 0;
-  auto virtual GetClusterService() -> std::shared_ptr<etcdserverpb::Cluster::StubInterface> = 0;
-  auto virtual GetMaintenanceService() -> std::shared_ptr<etcdserverpb::Maintenance::StubInterface> = 0;
-  auto virtual GetAuthService() -> std::shared_ptr<etcdserverpb::Auth::StubInterface> = 0;
+  auto virtual GetChannel() -> std::shared_ptr<grpc::ChannelInterface> = 0;
 };
 
-// The default `Transport` implementation by gRPC
+// The default `Transport` implementation which either receivces:
+// * A grpc target uri
+// * A grpc channel
 class Transport : public TransportInterface {
  public:
+  // Create a new Transport by grpc target uri
   Transport(const std::string& target):
-    Transport(CreateChannelByTarget(target)) {}
-  Transport(const std::shared_ptr<grpc::ChannelInterface>& channel):
-    channel_(channel),
-    kv_(std::make_shared<etcdserverpb::KV::Stub>(channel)),
-    watch_(std::make_shared<etcdserverpb::Watch::Stub>(channel)),
-    lease_(std::make_shared<etcdserverpb::Lease::Stub>(channel)),
-    cluster_(std::make_shared<etcdserverpb::Cluster::Stub>(channel)),
-    maintenance_(std::make_shared<etcdserverpb::Maintenance::Stub>(channel)),
-    auth_(std::make_shared<etcdserverpb::Auth::Stub>(channel)) {}
+    Transport(grpc::CreateChannel(target, grpc::InsecureChannelCredentials())) {}
 
-  // Get the channel of this transport
-  auto Channel() noexcept -> const std::shared_ptr<grpc::ChannelInterface>& {
+  // Create a new Transport by channel ptr
+  Transport(const std::shared_ptr<grpc::ChannelInterface>& channel):
+    channel_(channel) {}
+
+  auto GetChannel() -> std::shared_ptr<grpc::ChannelInterface> override {
     return channel_;
   }
 
-  auto GetKVService() -> std::shared_ptr<etcdserverpb::KV::StubInterface> override {
-    return kv_;
-  }
-
-  auto GetWatchService() -> std::shared_ptr<etcdserverpb::Watch::StubInterface> override {
-    return watch_;
-  }
-
-  auto GetLeaseService() -> std::shared_ptr<etcdserverpb::Lease::StubInterface> override {
-    return lease_;
-  }
-
-  auto GetClusterService() -> std::shared_ptr<etcdserverpb::Cluster::StubInterface> override {
-    return cluster_;
-  }
-
-  auto GetMaintenanceService() -> std::shared_ptr<etcdserverpb::Maintenance::StubInterface> override {
-    return maintenance_;
-  }
-  auto GetAuthService() -> std::shared_ptr<etcdserverpb::Auth::StubInterface> override {
-    return auth_;
-  }
-
- protected:
-  auto virtual CreateChannelByTarget(const std::string& target) -> std::shared_ptr<grpc::ChannelInterface>&;
-
  private:
-  const std::shared_ptr<grpc::ChannelInterface>& channel_;
-
-  std::shared_ptr<etcdserverpb::KV::Stub> kv_;
-  std::shared_ptr<etcdserverpb::Watch::Stub> watch_;
-  std::shared_ptr<etcdserverpb::Lease::Stub> lease_;
-  std::shared_ptr<etcdserverpb::Cluster::Stub> cluster_;
-  std::shared_ptr<etcdserverpb::Maintenance::Stub> maintenance_;
-  std::shared_ptr<etcdserverpb::Auth::Stub> auth_;
+  const std::shared_ptr<grpc::ChannelInterface> channel_;
 };
 
 }
