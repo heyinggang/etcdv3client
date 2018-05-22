@@ -78,3 +78,14 @@ cc_library(
     copts = ["-std=c++1z"],
     visibility = ["//test:__pkg__"],
 )
+
+cc_library(
+    name = "session",
+    srcs = ["session.cc"],
+    hdrs = ["session.h"],
+    deps = [
+        ":client",
+    ],
+    copts = ["-std=c++1z"],
+    visibility = ["//test:__pkg__"],
+)
