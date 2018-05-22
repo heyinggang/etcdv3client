@@ -19,11 +19,12 @@
 
 #include "transport.h"
 #include "kv.h"
+#include "watch.h"
 
 namespace etcdv3client {
 
 // The etcdv3 client class
-class Client final : public KVInterface {
+class Client final : public KVInterface, public WatchInterface {
  public:
 
   // Create a new Client by grpc URI
@@ -52,33 +53,51 @@ class Client final : public KVInterface {
   auto operator=(const Client&) -> Client& = delete;
 
   //
+  //
   // The KV interface
+  //
   //
 
   // Get key and values
-  auto Range(
-    grpc::ClientContext* context,
-    const std::string& key,
-    etcdserverpb::RangeResponse* response,
-    const RangeOptions& options = RangeOptions()
-  ) -> grpc::Status override;
+  auto Range(grpc::ClientContext* context,
+             const std::string& key,
+             etcdserverpb::RangeResponse* response,
+             const RangeOptions& options = RangeOptions()) -> grpc::Status override;
 
-  // Put
-  auto Put(
-    grpc::ClientContext* context,
-    const std::string& key,
-    const std::string& value,
-    etcdserverpb::PutResponse* response,
-    const PutOptions& options = PutOptions()
-    ) -> grpc::Status override;
+  // Put key and value
+  auto Put(grpc::ClientContext* context,
+           const std::string& key,
+           const std::string& value,
+           etcdserverpb::PutResponse* response,
+           const PutOptions& options = PutOptions()) -> grpc::Status override;
 
-  // Delete
-  auto DeleteRange(
-    grpc::ClientContext* context,
-    const std::string& key,
-    etcdserverpb::DeleteRangeResponse* response,
-    const DeleteRangeOptions& options = DeleteRangeOptions()
-  ) -> grpc::Status override;
+  // Delete key(s)
+  auto DeleteRange(grpc::ClientContext* context,
+                   const std::string& key,
+                   etcdserverpb::DeleteRangeResponse* response,
+                   const DeleteRangeOptions& options = DeleteRangeOptions()) -> grpc::Status override;
+
+  // Txn
+  auto Txn(grpc::ClientContext* context,
+           const ::etcdv3client::Txn& txn,
+           etcdserverpb::TxnResponse* response) -> grpc::Status override;
+
+  // Compact
+  auto Compact(grpc::ClientContext* context,
+               int64_t revision,
+               etcdserverpb::CompactionResponse* response,
+               const CompactOptions& options = CompactOptions()) -> grpc::Status override;
+
+  //
+  //
+  //
+  // The watch interface
+  //
+  //
+
+  // Watch
+  auto Watch(grpc::ClientContext* context) ->
+    std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> override;
 
  private:
 

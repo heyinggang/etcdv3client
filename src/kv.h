@@ -195,34 +195,137 @@ class DeleteRangeOptions : public Options<etcdserverpb::DeleteRangeRequest> {
   }
 };
 
+// CompactOptions
+class CompactOptions : public Options<etcdserverpb::CompactionRequest> {
+ public:
+  // With physical
+  auto WithPhysical() -> CompactOptions& {
+    setfuncs.push_back([](etcdserverpb::CompactionRequest& req) {
+      req.set_physical(true);
+    });
+    return *this;
+  }
+};
+
+class Txn;
+
 // The kv interface
 class KVInterface {
  public:
   virtual ~KVInterface() = default;
 
   // Get key and values
-  auto virtual Range(
-    grpc::ClientContext* context,
-    const std::string& key,
-    etcdserverpb::RangeResponse* response,
-    const RangeOptions& options = RangeOptions()
-  ) -> grpc::Status = 0;
+  auto virtual Range(grpc::ClientContext* context,
+                     const std::string& key,
+                     etcdserverpb::RangeResponse* response,
+                     const RangeOptions& options = RangeOptions()) -> grpc::Status = 0;
 
-  // Put a key and a value
-  auto virtual Put(
-    grpc::ClientContext* context,
-    const std::string& key,
-    const std::string& value,
-    etcdserverpb::PutResponse* response,
-    const PutOptions& options = PutOptions()
-    ) -> grpc::Status = 0;
+  // Put key and value
+  auto virtual Put(grpc::ClientContext* context,
+                   const std::string& key,
+                   const std::string& value,
+                   etcdserverpb::PutResponse* response,
+                   const PutOptions& options = PutOptions()) -> grpc::Status = 0;
 
-  auto virtual DeleteRange(
-    grpc::ClientContext* context,
-    const std::string& key,
-    etcdserverpb::DeleteRangeResponse* response,
-    const DeleteRangeOptions& options = DeleteRangeOptions()
-  ) -> grpc::Status = 0;
+  // Delete key(s)
+  auto virtual DeleteRange(grpc::ClientContext* context,
+                           const std::string& key,
+                           etcdserverpb::DeleteRangeResponse* response,
+                           const DeleteRangeOptions& options = DeleteRangeOptions()) -> grpc::Status = 0;
+
+  // Txn
+  auto virtual Txn(grpc::ClientContext* context,
+                   const Txn& txn,
+                   etcdserverpb::TxnResponse* response) -> grpc::Status = 0;
+
+  // Compact
+  auto virtual Compact(grpc::ClientContext* context,
+                       int64_t revision,
+                       etcdserverpb::CompactionResponse* response,
+                       const CompactOptions& options = CompactOptions()) -> grpc::Status = 0;
+};
+
+class Txn {
+ public:
+  // If: The compare condition
+  auto If(const etcdserverpb::Compare& compare) -> Txn& {
+    request_.add_compare()->CopyFrom(compare);
+    return *this;
+  }
+
+  // If: The compare condition
+  auto If(const etcdserverpb::Compare&& compare) -> Txn& {
+    *request_.add_compare() = std::move(compare);
+    return *this;
+  }
+
+  // Then
+  auto Then(const Txn& txn) -> Txn& {
+    request_.add_success()->mutable_request_txn()->CopyFrom(txn.GetRequest());
+    return *this;
+  }
+
+  auto ThenRange(const std::string& key, const RangeOptions& options = RangeOptions()) -> Txn& {
+    auto req = request_.add_success()->mutable_request_range();
+    req->set_key(key);
+    options.Apply(*req);
+    return *this;
+  }
+
+  auto ThenPut(const std::string& key,
+               const std::string& value,
+               const PutOptions& options = PutOptions()) -> Txn& {
+    auto req = request_.add_success()->mutable_request_put();
+    req->set_key(key);
+    req->set_value(value);
+    options.Apply(*req);
+    return *this;
+  }
+
+  auto ThenDeleteRange(const std::string& key, const DeleteRangeOptions& options = DeleteRangeOptions()) -> Txn& {
+    auto req = request_.add_success()->mutable_request_delete_range();
+    req->set_key(key);
+    options.Apply(*req);
+    return *this;
+  }
+
+  // Else
+  auto Else(const Txn& txn) -> Txn& {
+    request_.add_failure()->mutable_request_txn()->CopyFrom(txn.GetRequest());
+    return *this;
+  }
+
+  auto ElseRange(const std::string& key, const RangeOptions& options = RangeOptions()) -> Txn& {
+    auto req = request_.add_failure()->mutable_request_range();
+    req->set_key(key);
+    options.Apply(*req);
+    return *this;
+  }
+
+  auto ElsePut(const std::string& key,
+               const std::string& value,
+               const PutOptions& options = PutOptions()) -> Txn& {
+    auto req = request_.add_failure()->mutable_request_put();
+    req->set_key(key);
+    req->set_value(value);
+    options.Apply(*req);
+    return *this;
+  }
+
+  auto ElseDeleteRange(const std::string& key, const DeleteRangeOptions& options = DeleteRangeOptions()) -> Txn& {
+    auto req = request_.add_failure()->mutable_request_delete_range();
+    req->set_key(key);
+    options.Apply(*req);
+    return *this;
+  }
+
+  // Get txn request
+  auto GetRequest() const -> const etcdserverpb::TxnRequest& {
+    return request_;
+  }
+
+ private:
+  etcdserverpb::TxnRequest request_;
 };
 
 }

@@ -4,7 +4,7 @@ cc_test(
     copts = ["-Iexternal/gtest/include", "-std=c++1z"],
     deps = [
         "@com_google_googletest//:gtest_main",
-        "//src:kv",
+        "//src:client",
     ],
     linkstatic = True,
 )
