@@ -24,6 +24,7 @@ cc_library(
         "client.h",
         "kv.h",
         "watch.h",
+        "lease.h",
     ],
     deps = [
         "@com_github_grpc_grpc//:grpc++",
@@ -56,12 +57,23 @@ cc_library(
 )
 
 cc_library(
+    name = "lease",
+    srcs = ["lease.cc"],
+    deps = [
+        ":client_base",
+    ],
+    copts = ["-std=c++1z"],
+    visibility = ["//test:__pkg__"],
+)
+
+cc_library(
     name = "client",
     srcs = ["client.cc"],
     deps = [
         ":client_base",
         ":kv",
         ":watch",
+        ":lease",
     ],
     copts = ["-std=c++1z"],
     visibility = ["//test:__pkg__"],

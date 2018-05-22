@@ -20,11 +20,12 @@
 #include "transport.h"
 #include "kv.h"
 #include "watch.h"
+#include "lease.h"
 
 namespace etcdv3client {
 
 // The etcdv3 client class
-class Client final : public KVInterface, public WatchInterface {
+class Client final : public KVInterface, public WatchInterface, public LeaseInterface {
  public:
 
   // Create a new Client by grpc URI
@@ -90,7 +91,6 @@ class Client final : public KVInterface, public WatchInterface {
 
   //
   //
-  //
   // The watch interface
   //
   //
@@ -98,6 +98,37 @@ class Client final : public KVInterface, public WatchInterface {
   // Watch
   auto Watch(grpc::ClientContext* context) ->
     std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> override;
+
+  // Watch a single key (range)
+  auto WatchSingle(grpc::ClientContext* context,
+                   const std::string& key,
+                   const WatchOptions& options = WatchOptions()) -> std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> override;
+
+  //
+  //
+  // The lease interface
+  //
+  //
+
+  // Lease grant
+  auto LeaseGrant(grpc::ClientContext* context,
+                  int64_t ttl,
+                  etcdserverpb::LeaseGrantResponse* response,
+                  const LeaseGrantOptions& options = LeaseGrantOptions()) -> grpc::Status override;
+  // Lease revoke
+  auto LeaseRevoke(grpc::ClientContext* context,
+                   int64_t id,
+                   etcdserverpb::LeaseRevokeResponse* response) -> grpc::Status override;
+  // Lease keep alive
+  auto LeaseKeepAlive(grpc::ClientContext* context)
+    -> std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::LeaseKeepAliveRequest, etcdserverpb::LeaseKeepAliveResponse>> override;
+  // Lease time to live
+  auto LeaseTimeToLive(grpc::ClientContext* context,
+                       int64_t id,
+                       etcdserverpb::LeaseTimeToLiveResponse* response,
+                       const LeaseTimeToLiveOptions& options = LeaseTimeToLiveOptions()) -> grpc::Status override;
+  // List leases
+  auto LeaseLeases(grpc::ClientContext* context, etcdserverpb::LeaseLeasesResponse* response) -> grpc::Status override;
 
  private:
 
