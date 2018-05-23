@@ -24,6 +24,8 @@
 
 namespace etcdv3client {
 
+const int64_t InvalidLeaseID = 0;
+
 class LeaseGrantOptions : public Options<etcdserverpb::LeaseGrantRequest> {
  public:
   auto WithID(int64_t id) -> LeaseGrantOptions& {

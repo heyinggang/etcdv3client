@@ -9,3 +9,21 @@
  */
 
 #include "session.h"
+
+using namespace etcdv3client;
+
+Session::Session(const std::shared_ptr<Client>& client, const SessionOptions& options = SessionOptions()) :
+  client_(client),
+  options_(options) {
+  // Schedule to call lease grant
+}
+
+auto Session::Close() -> void {
+
+}
+
+auto Session::KeepAlive() -> void {
+  // Lease grant
+  // Lease keep alive
+  // Lease revoke
+}
