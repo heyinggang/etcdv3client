@@ -22,7 +22,7 @@
 
 #include "common.h"
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 const int64_t InvalidLeaseID = 0;
 

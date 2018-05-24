@@ -11,7 +11,7 @@
 #include "lease.h"
 #include "client.h"
 
-using namespace etcdv3client;
+using namespace brainaas::etcdv3client;
 
 // Lease grant
 auto Client::LeaseGrant(grpc::ClientContext* context,

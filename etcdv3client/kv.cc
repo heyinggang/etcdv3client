@@ -11,7 +11,7 @@
 #include "kv.h"
 #include "client.h"
 
-using namespace etcdv3client;
+using namespace brainaas::etcdv3client;
 
 auto Client::Range(grpc::ClientContext* context,
                    const std::string& key,
@@ -47,7 +47,7 @@ auto Client::DeleteRange(grpc::ClientContext* context,
 
 // Txn
 auto Client::Txn(grpc::ClientContext* context,
-                 const ::etcdv3client::Txn& txn,
+                 const ::brainaas::etcdv3client::Txn& txn,
                  etcdserverpb::TxnResponse* response) -> grpc::Status {
   return kv_->Txn(context, txn.GetRequest(), response);
 }

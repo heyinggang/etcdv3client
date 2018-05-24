@@ -21,7 +21,7 @@
 
 #include "common.h"
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 class WatchOptions : public Options<etcdserverpb::WatchCreateRequest> {
  public:

@@ -76,7 +76,7 @@ cc_library(
         ":lease",
     ],
     copts = ["-std=c++1z"],
-    visibility = ["//test:__pkg__"],
+    visibility = ["//test:__pkg__", "//:__pkg__"],
 )
 
 cc_library(
@@ -84,8 +84,9 @@ cc_library(
     srcs = ["session.cc"],
     hdrs = ["session.h"],
     deps = [
+        "@com_github_brainaas_cbase//cbase/time:backoff",
         ":client",
     ],
     copts = ["-std=c++1z"],
-    visibility = ["//test:__pkg__"],
+    visibility = ["//test:__pkg__", "//:__pkg__"],
 )

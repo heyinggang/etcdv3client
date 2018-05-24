@@ -15,7 +15,7 @@
 
 #include "grpcpp/grpcpp.h"
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 // Define the interface of a `Transport`.
 // The transport is used to create the underlying grpc channel

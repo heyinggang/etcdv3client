@@ -25,7 +25,7 @@
 #include "watch.h"
 #include "lease.h"
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 // The etcdv3 client class
 class Client final : public KVInterface, public WatchInterface, public LeaseInterface {
@@ -76,7 +76,7 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
 
   // Txn
   auto Txn(grpc::ClientContext* context,
-           const ::etcdv3client::Txn& txn,
+           const ::brainaas::etcdv3client::Txn& txn,
            etcdserverpb::TxnResponse* response) -> grpc::Status override;
 
   // Compact

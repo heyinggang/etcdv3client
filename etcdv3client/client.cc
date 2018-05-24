@@ -10,7 +10,7 @@
 
 #include "client.h"
 
-using namespace etcdv3client;
+using namespace brainaas::etcdv3client;
 
 Client::Client(const std::string& target):
   Client(std::unique_ptr<TransportInterface>(new Transport(target))) {}

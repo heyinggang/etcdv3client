@@ -13,7 +13,7 @@
 
 #include "gtest/gtest.h"
 
-#include "src/client.h"
+#include "etcdv3client/client.h"
 
 TEST(KVTest, Put) {
   etcdv3client::Client client("123");

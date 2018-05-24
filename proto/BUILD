@@ -38,5 +38,5 @@ cc_grpc_library(
     well_known_protos = False,
     use_external = True,
     generate_mocks = False,
-    visibility = ["//src:__pkg__"],
+    visibility = ["//etcdv3client:__pkg__"],
 )

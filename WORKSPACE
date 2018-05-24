@@ -1,4 +1,4 @@
-workspace(name = "brainaas_etcdv3client")
+workspace(name = "com_github_brainaas_etcdv3client")
 
 http_archive(
     name = "com_google_googletest",
@@ -14,3 +14,8 @@ http_archive(
 
 load("@com_github_grpc_grpc//:bazel/grpc_deps.bzl", "grpc_deps")
 grpc_deps()
+
+local_repository(
+    name = "com_github_brainaas_cbase",
+    path = "/Users/lipixun/workspace/src/github.com/brainaas/cbase",
+)

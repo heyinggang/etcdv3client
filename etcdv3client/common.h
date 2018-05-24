@@ -14,7 +14,7 @@
 #include <vector>
 #include <functional>
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 template<class TargetType>
 class Options {

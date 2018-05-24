@@ -21,7 +21,7 @@
 
 #include "common.h"
 
-namespace etcdv3client {
+namespace brainaas::etcdv3client {
 
 // RangeOptions
 class RangeOptions : public Options<etcdserverpb::RangeRequest> {

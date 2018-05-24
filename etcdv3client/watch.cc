@@ -11,7 +11,7 @@
 #include "watch.h"
 #include "client.h"
 
-using namespace etcdv3client;
+using namespace brainaas::etcdv3client;
 
 auto Client::Watch(grpc::ClientContext* context) ->
   std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> {
