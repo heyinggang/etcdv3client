@@ -16,127 +16,126 @@
 
 #include "grpcpp/grpcpp.h"
 
-#include "proto/rpc.pb.h"
-#include "proto/rpc.grpc.pb.h"
+#include "proto/proto.h"
 
 #include "common.h"
 
 namespace brainaas::etcdv3client {
 
 // RangeOptions
-class RangeOptions : public Options<etcdserverpb::RangeRequest> {
+class RangeOptions : public Options<proto::RangeRequest> {
  public:
   auto WithRangeEnd(const std::string& end) -> RangeOptions& {
-    setfuncs.push_back([end](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([end](proto::RangeRequest& req) {
       req.set_range_end(end);
     });
     return *this;
   }
 
   auto WithLimit(int64_t limit) -> RangeOptions& {
-    setfuncs.push_back([limit](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([limit](proto::RangeRequest& req) {
       req.set_limit(limit);
     });
     return *this;
   }
 
   auto WithRevision(int64_t revision) -> RangeOptions& {
-    setfuncs.push_back([revision](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([revision](proto::RangeRequest& req) {
       req.set_revision(revision);
     });
     return *this;
   }
 
   auto WithSortOrder(bool ascend = true) -> RangeOptions& {
-    setfuncs.push_back([ascend](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([ascend](proto::RangeRequest& req) {
       if (ascend) {
-        req.set_sort_order(etcdserverpb::RangeRequest_SortOrder_ASCEND);
+        req.set_sort_order(proto::RangeRequest_SortOrder_ASCEND);
       } else {
-        req.set_sort_order(etcdserverpb::RangeRequest_SortOrder_DESCEND);
+        req.set_sort_order(proto::RangeRequest_SortOrder_DESCEND);
       }
     });
     return *this;
   }
   // Sort by key. This is the default one, so there's usually no need to call this
   auto WithSortByKey() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
-      req.set_sort_target(etcdserverpb::RangeRequest_SortTarget_KEY);
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_sort_target(proto::RangeRequest_SortTarget_KEY);
     });
     return *this;
   }
 
   auto WithSortByVersion() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
-      req.set_sort_target(etcdserverpb::RangeRequest_SortTarget_VERSION);
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_sort_target(proto::RangeRequest_SortTarget_VERSION);
     });
     return *this;
   }
 
   auto WithSortByCreate() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
-      req.set_sort_target(etcdserverpb::RangeRequest_SortTarget_CREATE);
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_sort_target(proto::RangeRequest_SortTarget_CREATE);
     });
     return *this;
   }
 
   auto WithSortByMod() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
-      req.set_sort_target(etcdserverpb::RangeRequest_SortTarget_MOD);
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_sort_target(proto::RangeRequest_SortTarget_MOD);
     });
     return *this;
   }
 
   auto WithSortByValue() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
-      req.set_sort_target(etcdserverpb::RangeRequest_SortTarget_VALUE);
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_sort_target(proto::RangeRequest_SortTarget_VALUE);
     });
     return *this;
   }
 
   auto WithSerializable() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([](proto::RangeRequest& req) {
       req.set_serializable(true);
     });
     return *this;
   }
 
   auto WithKeysOnly() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([](proto::RangeRequest& req) {
       req.set_keys_only(true);
     });
     return *this;
   }
 
   auto WithCountOnly() -> RangeOptions& {
-    setfuncs.push_back([](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([](proto::RangeRequest& req) {
       req.set_count_only(true);
     });
     return *this;
   }
 
   auto WithMinModRevision(int64_t revision) -> RangeOptions& {
-    setfuncs.push_back([revision](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([revision](proto::RangeRequest& req) {
       req.set_min_mod_revision(revision);
     });
     return *this;
   }
 
   auto WithMaxModRevision(int64_t revision) -> RangeOptions& {
-    setfuncs.push_back([revision](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([revision](proto::RangeRequest& req) {
       req.set_max_mod_revision(revision);
     });
     return *this;
   }
 
   auto WithMinCreateRevision(int64_t revision) -> RangeOptions& {
-    setfuncs.push_back([revision](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([revision](proto::RangeRequest& req) {
       req.set_min_create_revision(revision);
     });
     return *this;
   }
 
   auto WithMaxCreateRevision(int64_t revision) -> RangeOptions& {
-    setfuncs.push_back([revision](etcdserverpb::RangeRequest& req) {
+    setfuncs.push_back([revision](proto::RangeRequest& req) {
       req.set_max_create_revision(revision);
     });
     return *this;
@@ -144,32 +143,32 @@ class RangeOptions : public Options<etcdserverpb::RangeRequest> {
 };
 
 // PutOptions
-class PutOptions : public Options<etcdserverpb::PutRequest> {
+class PutOptions : public Options<proto::PutRequest> {
  public:
   // Set the lease of this key
   auto WithLease(int64_t lease) -> PutOptions& {
-    setfuncs.push_back([lease](etcdserverpb::PutRequest& req) {
+    setfuncs.push_back([lease](proto::PutRequest& req) {
       req.set_lease(lease);
     });
     return *this;
   }
   // Return the previous key-value data
   auto WithPrevKV() -> PutOptions& {
-    setfuncs.push_back([](etcdserverpb::PutRequest& req) {
+    setfuncs.push_back([](proto::PutRequest& req) {
       req.set_prev_kv(true);
     });
     return *this;
   }
   // Ignore the value
   auto WithIgnoreValue() -> PutOptions& {
-    setfuncs.push_back([](etcdserverpb::PutRequest& req) {
+    setfuncs.push_back([](proto::PutRequest& req) {
       req.set_ignore_value(true);
     });
     return *this;
   }
   // Ignore the lease
   auto WithIgnoreLease() -> PutOptions& {
-    setfuncs.push_back([](etcdserverpb::PutRequest& req) {
+    setfuncs.push_back([](proto::PutRequest& req) {
       req.set_ignore_lease(true);
     });
     return *this;
@@ -177,18 +176,18 @@ class PutOptions : public Options<etcdserverpb::PutRequest> {
 };
 
 // DeleteRangeOptions
-class DeleteRangeOptions : public Options<etcdserverpb::DeleteRangeRequest> {
+class DeleteRangeOptions : public Options<proto::DeleteRangeRequest> {
  public:
   // With range end
   auto WithRangeEnd(const std::string& end) -> DeleteRangeOptions& {
-    setfuncs.push_back([end](etcdserverpb::DeleteRangeRequest& req) {
+    setfuncs.push_back([end](proto::DeleteRangeRequest& req) {
       req.set_range_end(end);
     });
     return *this;
   }
   // With the previous key-value data
   auto WithPrevKV() -> DeleteRangeOptions& {
-    setfuncs.push_back([](etcdserverpb::DeleteRangeRequest& req) {
+    setfuncs.push_back([](proto::DeleteRangeRequest& req) {
       req.set_prev_kv(true);
     });
     return *this;
@@ -196,11 +195,11 @@ class DeleteRangeOptions : public Options<etcdserverpb::DeleteRangeRequest> {
 };
 
 // CompactOptions
-class CompactOptions : public Options<etcdserverpb::CompactionRequest> {
+class CompactOptions : public Options<proto::CompactionRequest> {
  public:
   // With physical
   auto WithPhysical() -> CompactOptions& {
-    setfuncs.push_back([](etcdserverpb::CompactionRequest& req) {
+    setfuncs.push_back([](proto::CompactionRequest& req) {
       req.set_physical(true);
     });
     return *this;
@@ -217,44 +216,44 @@ class KVInterface {
   // Get key and values
   auto virtual Range(grpc::ClientContext* context,
                      const std::string& key,
-                     etcdserverpb::RangeResponse* response,
+                     proto::RangeResponse* response,
                      const RangeOptions& options = RangeOptions()) -> grpc::Status = 0;
 
   // Put key and value
   auto virtual Put(grpc::ClientContext* context,
                    const std::string& key,
                    const std::string& value,
-                   etcdserverpb::PutResponse* response,
+                   proto::PutResponse* response,
                    const PutOptions& options = PutOptions()) -> grpc::Status = 0;
 
   // Delete key(s)
   auto virtual DeleteRange(grpc::ClientContext* context,
                            const std::string& key,
-                           etcdserverpb::DeleteRangeResponse* response,
+                           proto::DeleteRangeResponse* response,
                            const DeleteRangeOptions& options = DeleteRangeOptions()) -> grpc::Status = 0;
 
   // Txn
   auto virtual Txn(grpc::ClientContext* context,
                    const Txn& txn,
-                   etcdserverpb::TxnResponse* response) -> grpc::Status = 0;
+                   proto::TxnResponse* response) -> grpc::Status = 0;
 
   // Compact
   auto virtual Compact(grpc::ClientContext* context,
                        int64_t revision,
-                       etcdserverpb::CompactionResponse* response,
+                       proto::CompactionResponse* response,
                        const CompactOptions& options = CompactOptions()) -> grpc::Status = 0;
 };
 
 class Txn {
  public:
   // If: The compare condition
-  auto If(const etcdserverpb::Compare& compare) -> Txn& {
+  auto If(const proto::Compare& compare) -> Txn& {
     request_.add_compare()->CopyFrom(compare);
     return *this;
   }
 
   // If: The compare condition
-  auto If(const etcdserverpb::Compare&& compare) -> Txn& {
+  auto If(const proto::Compare&& compare) -> Txn& {
     *request_.add_compare() = std::move(compare);
     return *this;
   }
@@ -320,12 +319,12 @@ class Txn {
   }
 
   // Get txn request
-  auto GetRequest() const -> const etcdserverpb::TxnRequest& {
+  auto GetRequest() const -> const proto::TxnRequest& {
     return request_;
   }
 
  private:
-  etcdserverpb::TxnRequest request_;
+  proto::TxnRequest request_;
 };
 
 }

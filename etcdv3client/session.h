@@ -19,8 +19,7 @@
 
 #include "grpcpp/grpcpp.h"
 
-#include "proto/rpc.pb.h"
-#include "proto/rpc.grpc.pb.h"
+#include "proto/proto.h"
 
 #include "common.h"
 #include "client.h"
@@ -30,6 +29,8 @@ namespace brainaas::etcdv3client {
 // The session options
 class SessionOptions {
  public:
+  typedef std::function<void(grpc::ClientContext*)> SetClientContextFunction;
+
   auto WithTTL(int64_t ttl) -> SessionOptions& {
     ttl_ = ttl;
     return *this;
@@ -40,19 +41,26 @@ class SessionOptions {
     return *this;
   }
 
-  auto WithMaxRevokeRetry(int times) -> SessionOptions {
+  auto WithMaxRevokeRetry(int times) -> SessionOptions& {
     revoke_max_retry_times_ = times;
+    return *this;
+  }
+
+  auto WithSetClientContext(SetClientContextFunction f) -> SessionOptions& {
+    set_context_function_ = f;
     return *this;
   }
 
   auto get_lease() const -> int64_t { return lease_; }
   auto get_ttl() const -> int64_t { return ttl_; }
   auto get_revoke_max_rety_times() const -> int { return revoke_max_retry_times_; }
+  auto get_set_context_function() const -> SetClientContextFunction { return set_context_function_; }
 
  private:
   int64_t lease_;
-  int64_t ttl_;
+  int64_t ttl_ = 60;
   int revoke_max_retry_times_;
+  SetClientContextFunction set_context_function_;
 };
 
 class Session {
@@ -71,15 +79,16 @@ class Session {
   auto Grant(grpc::ClientContext *context, const SessionOptions& options = SessionOptions()) -> grpc::Status;
   // Close this session, and also will revoke the lease
   auto Close() -> void;
+
+  // Get the client of this session
+  auto get_client() -> std::shared_ptr<Client> { return client_; }
   // Get the lease id
-  auto get_lease() -> int64_t {
-    return lease_;
-  }
+  auto get_lease() -> int64_t { return lease_; }
 
  private:
 
   // Keep alive thread worker
-  auto KeepAlive(grpc::ClientContext *context, std::chrono::seconds interval_secs, const SessionOptions& options) -> void;
+  auto KeepAlive(std::chrono::seconds interval_secs, const SessionOptions& options) -> void;
   // Get interval between keep alive requests by lease ttl. TTL is in seconds
   auto GetKeepAliveIntervalByTTL(int64_t ttl) -> std::chrono::seconds {
     auto interval_secs = ttl / 2;
@@ -96,10 +105,14 @@ class Session {
 
   std::thread keep_alive_thread_;
 
+  bool closed_ = false;
   std::mutex close_cv_m_;
   std::condition_variable close_cv_;
   const int revoke_default_max_retry_times = 3;
 };
+
+// Create a new session
+auto NewSession(std::shared_ptr<Client> client) -> std::shared_ptr<Session>;
 
 }
 

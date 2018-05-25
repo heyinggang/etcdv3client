@@ -2,9 +2,17 @@
 
 The etcdv3 client in cpp
 
-# Build
+## Build
 
-# Question
+* Mac OS
+
+  bazel test --copt "-D GRPC_BAZEL_BUILD" //test:* && bazel build --copt "-D GRPC_BAZEL_BUILD" libetcdv3client.so
+
+* Linux
+
+  bazel test //test:* && bazel build libetcdv3client.so
+
+## Question
 
 * Q: Why build or test on mac os x failed?
 

@@ -3,6 +3,7 @@ cc_library(
     deps = [
         "//etcdv3client:client",
         "//etcdv3client:session",
+        "//etcdv3client:election",
     ],
     copts = ["-std=c++1z"],
     visibility = ["//visibility:public"],

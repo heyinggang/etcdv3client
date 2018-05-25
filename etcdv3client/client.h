@@ -17,8 +17,7 @@
 #include <string>
 #include <memory>
 
-#include "proto/rpc.pb.h"
-#include "proto/rpc.grpc.pb.h"
+#include "proto/proto.h"
 
 #include "transport.h"
 #include "kv.h"
@@ -58,31 +57,31 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
   // Get key and values
   auto Range(grpc::ClientContext* context,
              const std::string& key,
-             etcdserverpb::RangeResponse* response,
+             proto::RangeResponse* response,
              const RangeOptions& options = RangeOptions()) -> grpc::Status override;
 
   // Put key and value
   auto Put(grpc::ClientContext* context,
            const std::string& key,
            const std::string& value,
-           etcdserverpb::PutResponse* response,
+           proto::PutResponse* response,
            const PutOptions& options = PutOptions()) -> grpc::Status override;
 
   // Delete key(s)
   auto DeleteRange(grpc::ClientContext* context,
                    const std::string& key,
-                   etcdserverpb::DeleteRangeResponse* response,
+                   proto::DeleteRangeResponse* response,
                    const DeleteRangeOptions& options = DeleteRangeOptions()) -> grpc::Status override;
 
   // Txn
   auto Txn(grpc::ClientContext* context,
            const ::brainaas::etcdv3client::Txn& txn,
-           etcdserverpb::TxnResponse* response) -> grpc::Status override;
+           proto::TxnResponse* response) -> grpc::Status override;
 
   // Compact
   auto Compact(grpc::ClientContext* context,
                int64_t revision,
-               etcdserverpb::CompactionResponse* response,
+               proto::CompactionResponse* response,
                const CompactOptions& options = CompactOptions()) -> grpc::Status override;
 
   //
@@ -93,12 +92,12 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
 
   // Watch
   auto Watch(grpc::ClientContext* context) ->
-    std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> override;
+    std::unique_ptr<grpc::ClientReaderWriterInterface<proto::WatchRequest, proto::WatchResponse>> override;
 
   // Watch a single key (range)
   auto WatchSingle(grpc::ClientContext* context,
                    const std::string& key,
-                   const WatchOptions& options = WatchOptions()) -> std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> override;
+                   const WatchOptions& options = WatchOptions()) -> std::unique_ptr<grpc::ClientReaderWriterInterface<proto::WatchRequest, proto::WatchResponse>> override;
 
   //
   //
@@ -109,22 +108,22 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
   // Lease grant
   auto LeaseGrant(grpc::ClientContext* context,
                   int64_t ttl,
-                  etcdserverpb::LeaseGrantResponse* response,
+                  proto::LeaseGrantResponse* response,
                   const LeaseGrantOptions& options = LeaseGrantOptions()) -> grpc::Status override;
   // Lease revoke
   auto LeaseRevoke(grpc::ClientContext* context,
                    int64_t id,
-                   etcdserverpb::LeaseRevokeResponse* response) -> grpc::Status override;
+                   proto::LeaseRevokeResponse* response) -> grpc::Status override;
   // Lease keep alive
   auto LeaseKeepAlive(grpc::ClientContext* context)
-    -> std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::LeaseKeepAliveRequest, etcdserverpb::LeaseKeepAliveResponse>> override;
+    -> std::unique_ptr<grpc::ClientReaderWriterInterface<proto::LeaseKeepAliveRequest, proto::LeaseKeepAliveResponse>> override;
   // Lease time to live
   auto LeaseTimeToLive(grpc::ClientContext* context,
                        int64_t id,
-                       etcdserverpb::LeaseTimeToLiveResponse* response,
+                       proto::LeaseTimeToLiveResponse* response,
                        const LeaseTimeToLiveOptions& options = LeaseTimeToLiveOptions()) -> grpc::Status override;
   // List leases
-  auto LeaseLeases(grpc::ClientContext* context, etcdserverpb::LeaseLeasesResponse* response) -> grpc::Status override;
+  auto LeaseLeases(grpc::ClientContext* context, proto::LeaseLeasesResponse* response) -> grpc::Status override;
 
  private:
 
@@ -132,12 +131,12 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
   std::unique_ptr<TransportInterface> transport_;
 
   // The stubs
-  std::unique_ptr<etcdserverpb::KV::Stub> kv_;
-  std::unique_ptr<etcdserverpb::Watch::Stub> watch_;
-  std::unique_ptr<etcdserverpb::Lease::Stub> lease_;
-  std::unique_ptr<etcdserverpb::Cluster::Stub> cluster_;
-  std::unique_ptr<etcdserverpb::Maintenance::Stub> maintenance_;
-  std::unique_ptr<etcdserverpb::Auth::Stub> auth_;
+  std::unique_ptr<proto::KV::Stub> kv_;
+  std::unique_ptr<proto::Watch::Stub> watch_;
+  std::unique_ptr<proto::Lease::Stub> lease_;
+  std::unique_ptr<proto::Cluster::Stub> cluster_;
+  std::unique_ptr<proto::Maintenance::Stub> maintenance_;
+  std::unique_ptr<proto::Auth::Stub> auth_;
 
 };
 

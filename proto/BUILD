@@ -38,5 +38,16 @@ cc_grpc_library(
     well_known_protos = False,
     use_external = True,
     generate_mocks = False,
+)
+
+cc_library(
+    name = "proto",
+    hdrs = ["proto.h"],
+    deps = [
+        ":etcdserver_cc_proto",
+        ":auth_proto",
+        ":kv_proto",
+        ":rpc_grpc_cc_proto",
+    ],
     visibility = ["//etcdv3client:__pkg__"],
 )

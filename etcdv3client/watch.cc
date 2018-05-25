@@ -14,16 +14,16 @@
 using namespace brainaas::etcdv3client;
 
 auto Client::Watch(grpc::ClientContext* context) ->
-  std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> {
+    std::unique_ptr<grpc::ClientReaderWriterInterface<proto::WatchRequest, proto::WatchResponse>> {
   return watch_->Watch(context);
 }
 
 auto Client::WatchSingle(grpc::ClientContext* context,
                          const std::string& key,
-                         const WatchOptions& options) -> std::unique_ptr<grpc::ClientReaderWriterInterface<etcdserverpb::WatchRequest, etcdserverpb::WatchResponse>> {
+                         const WatchOptions& options) -> std::unique_ptr<grpc::ClientReaderWriterInterface<proto::WatchRequest, proto::WatchResponse>> {
   auto return_ = watch_->Watch(context);
 
-  etcdserverpb::WatchRequest req;
+  proto::WatchRequest req;
   req.mutable_create_request()->set_key(key);
   options.Apply(*req.mutable_create_request());
 

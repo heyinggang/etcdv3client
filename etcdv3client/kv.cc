@@ -15,9 +15,9 @@ using namespace brainaas::etcdv3client;
 
 auto Client::Range(grpc::ClientContext* context,
                    const std::string& key,
-                   etcdserverpb::RangeResponse* response,
+                   proto::RangeResponse* response,
                    const RangeOptions& options) -> grpc::Status {
-  etcdserverpb::RangeRequest req;
+  proto::RangeRequest req;
   req.set_key(key);
   options.Apply(req);
   return kv_->Range(context, req, response);
@@ -26,9 +26,9 @@ auto Client::Range(grpc::ClientContext* context,
 auto Client::Put(grpc::ClientContext* context,
                  const std::string& key,
                  const std::string& value,
-                 etcdserverpb::PutResponse* response,
+                 proto::PutResponse* response,
                  const PutOptions& options) -> grpc::Status {
-  etcdserverpb::PutRequest req;
+  proto::PutRequest req;
   req.set_key(key);
   req.set_value(value);
   options.Apply(req);
@@ -37,9 +37,9 @@ auto Client::Put(grpc::ClientContext* context,
 
 auto Client::DeleteRange(grpc::ClientContext* context,
                          const std::string& key,
-                         etcdserverpb::DeleteRangeResponse* response,
+                         proto::DeleteRangeResponse* response,
                          const DeleteRangeOptions& options) -> grpc::Status {
-  etcdserverpb::DeleteRangeRequest req;
+  proto::DeleteRangeRequest req;
   req.set_key(key);
   options.Apply(req);
   return kv_->DeleteRange(context, req, response);
@@ -48,15 +48,15 @@ auto Client::DeleteRange(grpc::ClientContext* context,
 // Txn
 auto Client::Txn(grpc::ClientContext* context,
                  const ::brainaas::etcdv3client::Txn& txn,
-                 etcdserverpb::TxnResponse* response) -> grpc::Status {
+                 proto::TxnResponse* response) -> grpc::Status {
   return kv_->Txn(context, txn.GetRequest(), response);
 }
 
 auto Client::Compact(grpc::ClientContext* context,
                     int64_t revision,
-                    etcdserverpb::CompactionResponse* response,
+                    proto::CompactionResponse* response,
                     const CompactOptions& options) -> grpc::Status {
-  etcdserverpb::CompactionRequest req;
+  proto::CompactionRequest req;
   req.set_revision(revision);
   options.Apply(req);
   return kv_->Compact(context, req, response);

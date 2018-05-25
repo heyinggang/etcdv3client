@@ -12,7 +12,7 @@ cc_library(
     hdrs = ["transport.h"],
     deps = [
         "@com_github_grpc_grpc//:grpc++",
-        "//proto:rpc_grpc_cc_proto",
+        "//proto:proto",
     ],
     copts = ["-std=c++1z"],
     visibility = ["//test:__pkg__"],
@@ -28,7 +28,7 @@ cc_library(
     ],
     deps = [
         "@com_github_grpc_grpc//:grpc++",
-        "//proto:rpc_grpc_cc_proto",
+        "//proto:proto",
         ":common",
         ":transport",
     ],
@@ -86,6 +86,18 @@ cc_library(
     deps = [
         "@com_github_brainaas_cbase//cbase/time:backoff",
         ":client",
+    ],
+    copts = ["-std=c++1z"],
+    visibility = ["//test:__pkg__", "//:__pkg__"],
+)
+
+cc_library(
+    name = "election",
+    srcs = ["election.cc"],
+    hdrs = ["election.h"],
+    deps = [
+        "@com_github_brainaas_cbase//cbase/context:context",
+        ":session",
     ],
     copts = ["-std=c++1z"],
     visibility = ["//test:__pkg__", "//:__pkg__"],
