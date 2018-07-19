@@ -16,8 +16,9 @@
 #ifndef GITHUB_BRAINAAS_ETCDV3Client_PROTO_PROTO_H_
 #define GITHUB_BRAINAAS_ETCDV3Client_PROTO_PROTO_H_
 
-namespace brainaas::etcdv3client {
-  namespace proto = etcdserverpb;
+namespace brainaas::etcdv3client::proto {
+  using namespace etcdserverpb;
+  using namespace mvccpb;
 }
 
 #endif // GITHUB_BRAINAAS_ETCDV3Client_PROTO_PROTO_H_

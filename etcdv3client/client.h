@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef GITHUB_BRAINAAS_ETCDV3Client_CLIENT_H_
-#define GITHUB_BRAINAAS_ETCDV3Client_CLIENT_H_
+#ifndef GITHUB_BRAINAAS_ETCDV3CLIENT_CLIENT_H_
+#define GITHUB_BRAINAAS_ETCDV3CLIENT_CLIENT_H_
 
 #include <string>
 #include <memory>
@@ -23,13 +23,13 @@
 #include "kv.h"
 #include "watch.h"
 #include "lease.h"
+#include "election.h"
 
 namespace brainaas::etcdv3client {
 
 // The etcdv3 client class
 class Client final : public KVInterface, public WatchInterface, public LeaseInterface {
  public:
-
   // Create a new Client by grpc URI
   Client(const std::string& target);
   // Create a new Client by transport interface
@@ -125,6 +125,57 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
   // List leases
   auto LeaseLeases(grpc::ClientContext* context, proto::LeaseLeasesResponse* response) -> grpc::Status override;
 
+  //
+  //  Advanced apis
+  //
+  auto Election() -> ElectionInterface& {
+    return *election_;
+  }
+
+ protected:
+
+  // Election implements the ElectionInterface
+  class ElectionImpl : public ElectionInterface {
+   public:
+    ElectionImpl(Client* client) : client_(client) {}
+
+    // GetLeader gets the leader node
+    auto GetLeader(grpc::ClientContext* context,
+                   const std::string& key_prefix,
+                   ElectionNode* out_leader_node) -> maybecommon::Status override;
+
+    // Watch watchs the election change
+    auto Watch(const std::shared_ptr<context::Context>& ctx,
+               const std::string& key_prefix,
+               ElectionNode* out_leader_node) -> maybecommon::Status override {
+      return Watch(ctx, key_prefix, out_leader_node, ElectionWatchOptions());
+    }
+    auto Watch(const std::shared_ptr<context::Context>& ctx,
+               const std::string& key_prefix,
+               ElectionNode* out_leader_node,
+               const ElectionWatchOptions& options) -> maybecommon::Status override;
+
+    // Campaign puts a value as eligible for the election
+    // This is a blocking method which will wait for the leadership or context cancelled
+    // Args:
+    //  value: The value to claim
+    // Returns:
+    //  Tuple<shared_ptr<LeaderSession>, maybecommon::Status>
+    auto Campaign(const std::shared_ptr<context::Context>& ctx,
+                  const std::string& key_prefix,
+                  const std::string& value,
+                  const std::shared_ptr<Session>& session) -> std::shared_ptr<LeaderSession> override {
+      return Campaign(ctx, key_prefix, value, session, CampaignOptions());
+    }
+    auto Campaign(const std::shared_ptr<context::Context>& ctx,
+                  const std::string& key_prefix,
+                  const std::string& value,
+                  const std::shared_ptr<Session>& session,
+                  const CampaignOptions& options) -> std::shared_ptr<LeaderSession> override;
+   private:
+    Client* client_;
+  };
+
  private:
 
   // The transport object. `Client` has the ownership of this object.
@@ -138,6 +189,8 @@ class Client final : public KVInterface, public WatchInterface, public LeaseInte
   std::unique_ptr<proto::Maintenance::Stub> maintenance_;
   std::unique_ptr<proto::Auth::Stub> auth_;
 
+  // Advanced api
+  std::unique_ptr<ElectionImpl> election_;
 };
 
 auto New(const std::string& target) -> std::shared_ptr<Client>;
@@ -146,4 +199,4 @@ auto New(std::unique_ptr<TransportInterface>& transport) -> std::shared_ptr<Clie
 
 }
 
-#endif // GITHUB_BRAINAAS_ETCDV3Client_CLIENT_H_
+#endif // GITHUB_BRAINAAS_ETCDV3CLIENT_CLIENT_H_

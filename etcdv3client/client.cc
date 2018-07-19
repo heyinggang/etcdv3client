@@ -27,6 +27,8 @@ Client::Client(std::unique_ptr<TransportInterface>&& transport):
   cluster_ = proto::Cluster::NewStub(transport_->GetChannel());
   maintenance_ = proto::Maintenance::NewStub(transport_->GetChannel());
   auth_ = proto::Auth::NewStub(transport_->GetChannel());
+  // Create advanced apis
+  election_ = std::make_unique<ElectionImpl>(this);
 }
 
 auto brainaas::etcdv3client::New(const std::string& target) -> std::shared_ptr<Client> {

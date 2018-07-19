@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef GITHUB_BRAINAAS_ETCDV3Client_TRANSPORT_H_
-#define GITHUB_BRAINAAS_ETCDV3Client_TRANSPORT_H_
+#ifndef GITHUB_BRAINAAS_ETCDV3CLIENT_TRANSPORT_H_
+#define GITHUB_BRAINAAS_ETCDV3CLIENT_TRANSPORT_H_
 
 #include <memory>
 
@@ -58,4 +58,4 @@ class Transport : public TransportInterface {
 
 }
 
-#endif // GITHUB_BRAINAAS_ETCDV3Client_TRANSPORT_H_
+#endif // GITHUB_BRAINAAS_ETCDV3CLIENT_TRANSPORT_H_

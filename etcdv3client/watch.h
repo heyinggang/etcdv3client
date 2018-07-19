@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef GITHUB_BRAINAAS_ETCDV3Client_WATCH_H_
-#define GITHUB_BRAINAAS_ETCDV3Client_WATCH_H_
+#ifndef GITHUB_BRAINAAS_ETCDV3CLIENT_WATCH_H_
+#define GITHUB_BRAINAAS_ETCDV3CLIENT_WATCH_H_
 
 #include <string>
 #include <memory>
@@ -24,13 +24,33 @@ namespace brainaas::etcdv3client {
 
 class WatchOptions : public Options<proto::WatchCreateRequest> {
  public:
+  // With the key prefix
+  auto WithPrefix() -> WatchOptions& {
+    setfuncs.push_back([](proto::WatchCreateRequest& req) {
+      if (req.key().length() == 0) {
+        req.set_key(std::string("\0", 1));
+        req.set_range_end(std::string("\0", 1));
+      } else {
+        req.set_range_end(GetPrefixRangeEnd(req.key()));
+      }
+    });
+    return *this;
+  }
+  // With range end
   auto WithRangeEnd(const std::string& end) -> WatchOptions& {
     setfuncs.push_back([end](proto::WatchCreateRequest& req) {
       req.set_range_end(end);
     });
     return *this;
   }
-
+  // With from the the key
+  auto WithFromKey() -> WatchOptions& {
+    setfuncs.push_back([](proto::WatchCreateRequest& req) {
+      req.set_range_end(std::string("\0", 1));
+    });
+    return *this;
+  }
+  // WIth start revision
   auto WithStartRevision(int64_t revision) -> WatchOptions& {
     setfuncs.push_back([revision](proto::WatchCreateRequest& req) {
       req.set_start_revision(revision);
@@ -96,4 +116,4 @@ class WatchInterface {
 
 }
 
-#endif // GITHUB_BRAINAAS_ETCDV3Client_WATCH_H_
+#endif // GITHUB_BRAINAAS_ETCDV3CLIENT_WATCH_H_

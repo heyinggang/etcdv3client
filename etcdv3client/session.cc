@@ -8,111 +8,168 @@
  *
  */
 
+#include "session.h"
+
+#include "glog/logging.h"
+
 #include "cbase/time/backoff.h"
 
-#include "session.h"
+#include "client.h"
 
 using namespace brainaas::etcdv3client;
 
 // Grant the session
-auto Session::Grant(grpc::ClientContext *context, const SessionOptions& options) -> grpc::Status {
-  // Grant the lease
-  proto::LeaseGrantResponse response;
-  auto status = client_->LeaseGrant(context, options.get_ttl(), &response, LeaseGrantOptions().WithID(options.get_lease()));
-  if (!status.ok()) {
-    return status;
+auto Session::Grant(const std::shared_ptr<context::Context>& ctx,
+                    const SessionOptions& options) -> maybecommon::Status {
+  std::unique_lock<std::mutex> lk(m_);
+  if (closed_.IsSet()) {
+    // A closed session cannot be granted again
+    return Status(StatusCode::SessionAlreadyClosed, "Session is already closed");
   }
-
-  lease_ = response.id();
-  lease_ttl_ = response.ttl(); // In seconds
-
+  if (granted_) {
+    // Session is already granted
+    return Status(StatusCode::SessionAlreadyGranted, "Session is already granted");
+  }
   // Start the keep alive thread,
-  keep_alive_thread_ = std::thread(&Session::KeepAlive, this, GetKeepAliveIntervalByTTL(lease_ttl_), options);
-
-  return status;
+  grant_and_keep_alive_thread_ = std::thread(&Session::GrantAndKeepAlive,
+                                             this,
+                                             ctx,
+                                             options);
+  granted_ = true;
+  return Status();
 }
 
 auto Session::Close() -> void {
-  {
-    std::unique_lock<std::mutex> lk(close_cv_m_);
-    if (closed_) {
-      return;
-    }
-    closed_ = true;
-  }
-  close_cv_.notify_all();
-  if (keep_alive_thread_.joinable()) {
-    keep_alive_thread_.join();
+  std::unique_lock<std::mutex> lk(m_);
+  // Set close
+  closed_.Set();
+  // Wait thread
+  if (grant_and_keep_alive_thread_.joinable()) {
+    grant_and_keep_alive_thread_.join();
   }
 }
 
-auto Session::KeepAlive(std::chrono::seconds interval_secs, const SessionOptions& options) -> void {
-  brainaas::cbase::time::BackOffStrategy backoff(
-    std::chrono::seconds(1),
-    interval_secs,
-    interval_secs
-    );
-
-  auto set_client_context_func = options.get_set_context_function();
-
-  while (!closed_) {
-    grpc::ClientContext context;
-    if (set_client_context_func != nullptr) {
-      set_client_context_func(&context);
+auto Session::GrantAndKeepAlive(std::shared_ptr<context::Context> ctx, SessionOptions options) -> void {
+  auto close_event = context::WaitAny({ctx.get(), &closed_});
+  while (!close_event->Finished()) {
+    // Try grant
+    VLOG(1) << LogPrefix << "::Session - Try grant lease " << lease_;
+    TryGrant(close_event, options);
+    options.set_lease(lease_);
+    options.set_ttl(lease_ttl_);
+    VLOG(1) << LogPrefix << "::Session - Complete grant lease " << lease_;
+    if (!close_event->Finished()) {
+      // Set alive
+      expired_->Reset();
+      alive_->Set();
+      // Try keepalive
+      VLOG(1) << LogPrefix << "::Session - Try keep alive for " << lease_;
+      TryKeepAlive(close_event, options);
+      VLOG(1) << LogPrefix << "::Session - Stop keep alive for " << lease_;
+      // Set expired
+      alive_->Reset();
+      expired_->Set();
     }
-    auto keep_alive_rw = client_->LeaseKeepAlive(&context);
-    while (true) {
-      {
-        std::unique_lock<std::mutex> lk(close_cv_m_);
-        if (close_cv_.wait_for(lk, backoff.Next(), [this]{ return closed_; })) {
-          // Closed
-          break;
-        }
+  }
+  // Revoke
+  TryRevoke(options);
+  // Close
+  closed_.Set();
+}
+
+auto Session::TryGrant(const std::shared_ptr<context::Waitable>& close_event, const SessionOptions& options) -> void {
+  brainaas::cbase::time::BackOffStrategy backoff(options.get_retry_min_wait_time(), options.get_retry_max_wait_time());
+
+  while (!close_event->Finished()) {
+    VLOG(1) << LogPrefix << "::Session - Start grant with lease " << options.get_lease() << " ttl " << options.get_ttl();
+    proto::LeaseGrantResponse response;
+    auto context = GetGRPCClientContext(options.get_get_grpc_client_context_func());
+    auto status = client_->LeaseGrant(context.get(),
+                                      options.get_ttl(),
+                                      &response,
+                                      LeaseGrantOptions().WithID(options.get_lease()));
+    if (status.ok()) {
+      // Good
+      lease_ = response.id();
+      lease_ttl_ = response.ttl(); // In seconds
+      return;
+    }
+    // Bad
+    LOG_EVERY_N(ERROR, 10) << LogPrefix << "::Session - Failed to grant with error: #" << status.error_code() << " " << status.error_message();
+    // Wait with backoff
+    backoff.Reset(false);
+    if (close_event->Wait(backoff.Next())) {
+      // Close event
+      return;
+    }
+  }
+}
+
+auto Session::TryKeepAlive(const std::shared_ptr<context::Waitable>& close_event, const SessionOptions& options) -> void {
+  auto ttl = std::chrono::seconds(lease_ttl_);
+  brainaas::cbase::time::BackOffStrategy backoff(std::min(options.get_retry_min_wait_time(), ttl),
+                                                 std::min(options.get_retry_max_wait_time(), ttl));
+  while (!close_event->Finished()) {
+    VLOG(1) << LogPrefix << "::Session - Start session keep alive with lease " << lease_ << " ttl " << options.get_ttl();
+    auto context = GetGRPCClientContext(options.get_get_grpc_client_context_func());
+    auto keep_alive_rw = client_->LeaseKeepAlive(context.get());
+    while (true) { // Inner loop to keep alive
+      if (close_event->Wait(backoff.Next())) {
+        // Close event
+        VLOG(1) << LogPrefix << "::Session - Close event is set for " << lease_;
+        context->TryCancel();
+        keep_alive_rw->Finish();
+        return;
       }
       // Write request and wait for response
       proto::LeaseKeepAliveRequest req;
       proto::LeaseKeepAliveResponse rsp;
       req.set_id(lease_);
+      VLOG(3) << LogPrefix << "::Session - Keep alive start for " << lease_;
       if (keep_alive_rw->Write(req) && keep_alive_rw->Read(&rsp)) {
         // Good
+        VLOG(3) << LogPrefix << "::Session - Keep alive succeed for " << lease_;
         lease_ = rsp.id();
         lease_ttl_ = rsp.ttl();
-        backoff.Reset(true);
+        backoff.Reset();
       } else {
-        // Bad, retry with new request
-        keep_alive_rw->Finish();
+        // Bad
+        auto status = keep_alive_rw->Finish();
+        if (status.error_code() == grpc::StatusCode::NOT_FOUND) {
+          // Lease not found, close the session
+          LOG(ERROR) << LogPrefix << "::Session - Lost lease " << lease_;
+          return;
+        }
+        LOG(ERROR) << LogPrefix << "::Session - Failed to keep alive for " << lease_ << " with error: #" << status.error_code() << " " << status.error_message();
         backoff.Reset(false);
+        std::this_thread::sleep_for(backoff.Next());
         break;
       }
-    }
+    } // Inner loop
   }
+}
 
-  // Lease revoke
+auto Session::TryRevoke(const SessionOptions& options) -> void {
+  brainaas::cbase::time::BackOffStrategy backoff(options.get_retry_min_wait_time(), options.get_retry_max_wait_time());
+
   int revoke_max_retry_times = options.get_revoke_max_rety_times();
   if (!revoke_max_retry_times) {
     revoke_max_retry_times = revoke_default_max_retry_times;
   }
 
   int retry_times = 0;
-
-  backoff.Reset(true);
   while (++retry_times <= revoke_max_retry_times) {
-    grpc::ClientContext context;
-    if (set_client_context_func != nullptr) {
-      set_client_context_func(&context);
-    }
+    VLOG(1) << LogPrefix << "::Session - Start revoke lease " << lease_;
     proto::LeaseRevokeResponse rsp;
-    auto status = client_->LeaseRevoke(&context, lease_, &rsp);
-    if (status.ok()) {
+    auto context = GetGRPCClientContext(options.get_get_grpc_client_context_func());
+    auto status = client_->LeaseRevoke(context.get(), lease_, &rsp);
+    if (status.ok() || status.error_code() == grpc::StatusCode::NOT_FOUND) {
+      // Revoked or lease not found both are ok
+      VLOG(3) << LogPrefix << "::Session - Revoke succeed for " << lease_;
       return;
     }
+    LOG(ERROR) << LogPrefix << "::Session - Failed to revoke lease " << lease_ << " with error: #" << status.error_code() << " " << status.error_message();
     backoff.Reset(false);
     std::this_thread::sleep_for(backoff.Next());
   }
-
-  // Failed to revoke. This is acceptable since the lease will expire.
-}
-
-auto brainaas::etcdv3client::NewSession(std::shared_ptr<Client> client) -> std::shared_ptr<Session> {
-  return std::make_shared<Session>(client);
 }

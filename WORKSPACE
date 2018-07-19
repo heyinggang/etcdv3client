@@ -34,3 +34,13 @@ local_repository(
     name = "com_github_brainaas_cbase",
     path = "/Users/lipixun/workspace/src/github.com/brainaas/cbase",
 )
+
+local_repository(
+    name = "com_github_cppcontext_context",
+    path = "/Users/lipixun/workspace/src/github.com/cppcontext/context",
+)
+
+local_repository(
+    name = "com_github_cppcontext_maybecommon",
+    path = "/Users/lipixun/workspace/src/github.com/cppcontext/maybecommon",
+)

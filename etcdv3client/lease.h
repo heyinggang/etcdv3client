@@ -9,8 +9,8 @@
  */
 
 
-#ifndef GITHUB_BRAINAAS_ETCDV3Client_LEASE_H_
-#define GITHUB_BRAINAAS_ETCDV3Client_LEASE_H_
+#ifndef GITHUB_BRAINAAS_ETCDV3CLIENT_LEASE_H_
+#define GITHUB_BRAINAAS_ETCDV3CLIENT_LEASE_H_
 
 #include <string>
 #include <memory>
@@ -71,4 +71,4 @@ class LeaseInterface {
 
 }
 
-#endif // GITHUB_BRAINAAS_ETCDV3ClientLEASEH_H_
+#endif // GITHUB_BRAINAAS_ETCDV3CLIENT_LEASE_H_

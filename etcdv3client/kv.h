@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef GITHUB_BRAINAAS_ETCDV3Client_KV_H_
-#define GITHUB_BRAINAAS_ETCDV3Client_KV_H_
+#ifndef GITHUB_BRAINAAS_ETCDV3CLIENT_KV_H_
+#define GITHUB_BRAINAAS_ETCDV3CLIENT_KV_H_
 
 #include <string>
 #include <vector>
@@ -25,9 +25,29 @@ namespace brainaas::etcdv3client {
 // RangeOptions
 class RangeOptions : public Options<proto::RangeRequest> {
  public:
+  // With the key prefix
+  auto WithPrefix() -> RangeOptions& {
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      if (req.key().length() == 0) {
+        req.set_key(std::string("\0", 1));
+        req.set_range_end(std::string("\0", 1));
+      } else {
+        req.set_range_end(GetPrefixRangeEnd(req.key()));
+      }
+    });
+    return *this;
+  }
+  // With the range end
   auto WithRangeEnd(const std::string& end) -> RangeOptions& {
     setfuncs.push_back([end](proto::RangeRequest& req) {
       req.set_range_end(end);
+    });
+    return *this;
+  }
+  // With from the the key
+  auto WithFromKey() -> RangeOptions& {
+    setfuncs.push_back([](proto::RangeRequest& req) {
+      req.set_range_end(std::string("\0", 1));
     });
     return *this;
   }
@@ -140,6 +160,30 @@ class RangeOptions : public Options<proto::RangeRequest> {
     });
     return *this;
   }
+  // With return the first create one
+  auto WithFirstCreate() -> RangeOptions& {
+    return WithPrefix().WithSortByCreate().WithSortOrder().WithLimit(1);
+  }
+  // With return the last create one
+  auto WithLastCreate() -> RangeOptions& {
+    return WithPrefix().WithSortByCreate().WithSortOrder(false).WithLimit(1);
+  }
+  // With return the first key
+  auto WithFirstKey() -> RangeOptions& {
+    return WithPrefix().WithSortByKey().WithSortOrder().WithLimit(1);
+  }
+  // With return the last key
+  auto WithLastKey() -> RangeOptions& {
+    return WithPrefix().WithSortByKey().WithSortOrder(false).WithLimit(1);
+  }
+  // With return the first mod one
+  auto WithFirstMod() -> RangeOptions& {
+    return WithPrefix().WithSortByMod().WithSortOrder().WithLimit(1);
+  }
+  // With return the last mod one
+  auto WithLastMod() -> RangeOptions& {
+    return WithPrefix().WithSortByMod().WithSortOrder(false).WithLimit(1);
+  }
 };
 
 // PutOptions
@@ -178,10 +222,29 @@ class PutOptions : public Options<proto::PutRequest> {
 // DeleteRangeOptions
 class DeleteRangeOptions : public Options<proto::DeleteRangeRequest> {
  public:
+  // With the key prefix
+  auto WithPrefix() -> DeleteRangeOptions& {
+    setfuncs.push_back([](proto::DeleteRangeRequest& req) {
+      if (req.key().length() == 0) {
+        req.set_key(std::string("\0", 1));
+        req.set_range_end(std::string("\0", 1));
+      } else {
+        req.set_range_end(GetPrefixRangeEnd(req.key()));
+      }
+    });
+    return *this;
+  }
   // With range end
   auto WithRangeEnd(const std::string& end) -> DeleteRangeOptions& {
     setfuncs.push_back([end](proto::DeleteRangeRequest& req) {
       req.set_range_end(end);
+    });
+    return *this;
+  }
+  // With from the the key
+  auto WithFromKey() -> DeleteRangeOptions& {
+    setfuncs.push_back([](proto::DeleteRangeRequest& req) {
+      req.set_range_end(std::string("\0", 1));
     });
     return *this;
   }
@@ -329,4 +392,4 @@ class Txn {
 
 }
 
-#endif // GITHUB_BRAINAAS_ETCDV3Client_KV_H_
+#endif // GITHUB_BRAINAAS_ETCDV3CLIENT_KV_H_
